@@ -56,12 +56,13 @@ def deidentifier_model(file_seed, device, num_workers, batch_size, hospitals, ve
         "VENDOR",
     ]
 
-    for i in range(len(reports)):
-        report = reports[i]
-        report = report.replace("\\", "")
-        report = report.replace("[", "")
-        report = report.replace("]", "")
-        report = report.strip()
+    # DO NOT WANT ANY POST PROCESSING ON THE NUMPY ARRAYS
+    # for i in range(len(reports)):
+    #     report = reports[i]
+    #     report = report.replace("\\", "")
+    #     report = report.replace("[", "")
+    #     report = report.replace("]", "")
+    #     report = report.strip()
 
         # for label in labels:
         #    report = report.replace(label, "")
