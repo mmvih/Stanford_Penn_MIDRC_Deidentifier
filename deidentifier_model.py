@@ -67,7 +67,7 @@ def deidentifier_model(file_seed, device, num_workers, batch_size, hospitals, ve
         # for label in labels:
         #    report = report.replace(label, "")
 
-        reports[i] = report
+        # reports[i] = report
 
     import time
 
