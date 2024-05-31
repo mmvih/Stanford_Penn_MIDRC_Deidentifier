@@ -76,10 +76,8 @@ def deidentifier_model(file_seed, device, num_workers, batch_size, hospitals, ve
 
     reports_save = reports[:]
 
-    for break_token in break_tokens:
-        break_tokens_ids.append(
-            int(classifier.preprocess(break_token)["input_ids"][0][1])
-        )
+    break_tokens_ids = [list(classifier.preprocess(break_token))[0]["input_ids"][0][1] \
+                            for break_token in break_tokens]
 
     reports_tokenized = classifier.tokenizer(
         reports,
