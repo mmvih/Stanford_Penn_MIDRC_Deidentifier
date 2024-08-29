@@ -89,71 +89,36 @@ def deidentifier_model_and_hide_in_plain_sight(
     deidentifier_model(
         file_seed, device, num_workers, batch_size, hospital_list, vendor_list
     )
-    hide_in_plain_sight(file_seed)
+    # hide_in_plain_sight(file_seed)
 
 
 def generate_output_files(file_seed_list, output_file_path):
-    reports = []
-    labeled_reports = []
-    deidentified_reports = []
-    phi_lengths = []
+    original_reports = []
+    predictions = {}
 
     for file_seed in file_seed_list:
         with open("original_reports" + file_seed + ".npy", "rb") as f:
-            reports.append(np.load(f, allow_pickle=True))
+            original_reports.append(np.load(f, allow_pickle=True))
         os.remove("original_reports" + file_seed + ".npy")
 
-        with open("labeled_reports" + file_seed + ".npy", "rb") as f:
-            labeled_reports.append(np.load(f, allow_pickle=True))
-        os.remove("labeled_reports" + file_seed + ".npy")
+        with open("predictions" + file_seed + ".npy", "rb") as f:
+            prediction_seed = np.load(f, allow_pickle=True).item()
+            for p in prediction_seed:
+                if p in predictions:
+                    predictions[p].extend(prediction_seed[p])
+                else:
+                    predictions[p] = prediction_seed[p]
+        os.remove("predictions" + file_seed + ".npy")
 
-        with open("deidentified_reports" + file_seed + ".npy", "rb") as f:
-            deidentified_reports.append(np.load(f, allow_pickle=True))
-        os.remove("deidentified_reports" + file_seed + ".npy")
 
-        with open("phi_lengths" + file_seed + ".npy", "rb") as f:
-            phi_lengths.append(np.load(f, allow_pickle=True))
-        os.remove("phi_lengths" + file_seed + ".npy")
+    original_reports = np.concatenate(original_reports)
+    # predictions = np.concatenate(predictions)
 
-    reports = np.concatenate(reports)
-    labeled_reports = np.concatenate(labeled_reports)
-    deidentified_reports = np.concatenate(deidentified_reports)
-    phi_lengths = np.concatenate(phi_lengths)
+    with open("original_reports.npy", "wb") as f:
+        np.save(f, original_reports, allow_pickle=True)
 
-    with open(output_file_path, "wb") as f:
-        np.save(f, deidentified_reports, allow_pickle=True)
-
-    print("finished writing the deidentified reports")
-
-    with open("deidentification_details_for_review_reports.npy", "wb") as f:
-        np.save(f, reports, allow_pickle=True)
-
-    with open("deidentification_details_for_review_labeled_reports.npy", "wb") as f:
-        np.save(f, labeled_reports, allow_pickle=True)
-
-    with open("deidentification_details_for_review_phi_lengths.npy", "wb") as f:
-        np.save(f, phi_lengths, allow_pickle=True)
-
-    print("Only task remaining is saving a .csv file for review purposes")
-    print("This step can take a long time, you can interrupt if needed")
-    print(
-        "All the data of the .csv file being written has already been saved in separate .npy files"
-    )
-
-    df_for_review = pd.DataFrame(
-        [reports, labeled_reports, deidentified_reports, phi_lengths]
-    ).transpose()
-    df_for_review.rename(
-        columns={
-            0: "original_reports",
-            1: "labeled_reports",
-            2: "deidentified_reports",
-            3: "phi_lengths",
-        },
-        inplace=True,
-    )
-    df_for_review.to_csv("deidentification_details_for_review.csv", index=False)
-
+    with open("predictions.npy", "wb") as f:
+        np.save(f, predictions, allow_pickle=True)
 
 def main(args):
     # Load the reports
@@ -280,7 +245,7 @@ def main(args):
         for p in processes:
             p.join()
 
-        time.sleep(30)  # giving time for the processes to be cleaned
+        time.sleep(2)  # giving time for the processes to be cleaned
 
     generate_output_files(file_seed_list, args.output_file_path)
 
