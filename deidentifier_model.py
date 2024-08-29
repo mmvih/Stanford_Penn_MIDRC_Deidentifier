@@ -900,6 +900,7 @@ def deidentifier_model(file_seed, device, num_workers, batch_size, hospitals, ve
                 p_list.append(p)
             predictions_reconstituated[i].extend(p_list)
             offset += report_chunk_size[j]
+        offset = 0
 
                 
 
