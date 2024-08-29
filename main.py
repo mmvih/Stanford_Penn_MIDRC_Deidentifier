@@ -245,7 +245,7 @@ def main(args):
         for p in processes:
             p.join()
 
-        time.sleep(2)  # giving time for the processes to be cleaned
+        time.sleep(30)  # giving time for the processes to be cleaned
 
     generate_output_files(file_seed_list, args.output_file_path)
 
