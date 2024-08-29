@@ -883,13 +883,25 @@ def deidentifier_model(file_seed, device, num_workers, batch_size, hospitals, ve
         if len(prediction):
             assert prediction[-1]["start"] < prediction[-1]["end"]
 
+    report_chunk_size = []
+    for report in reports:
+        report_chunk_size.append(len(report))
     predictions_reconstituated = {}
 
+    offset = 0
     for i in range(len(reports_save)):
         predictions_reconstituated[i] = [p for p in predictions[i]]
+        offset += report_chunk_size[i]
         for j in report_idx_to_leftover_chunks_idx[i]:
-            
-            predictions_reconstituated[i].extend(p for p in predictions[j])
+            p_list = []
+            for p in predictions[j]:
+                p["start"] += offset
+                p["end"] += offset
+                p_list.append(p)
+            predictions_reconstituated[i].extend(p_list)
+            offset += report_chunk_size[j]
+
+                
 
     assert len(predictions_reconstituated) == len(reports_save)
 
