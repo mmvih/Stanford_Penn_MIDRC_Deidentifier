@@ -883,69 +883,27 @@ def deidentifier_model(file_seed, device, num_workers, batch_size, hospitals, ve
         if len(prediction):
             assert prediction[-1]["start"] < prediction[-1]["end"]
 
-    model_labels_to_hips_labels = {
-        "VENDOR": "VENDOR",
-        "DATE": "DATES",
-        "HCW": "HCW",
-        "HOSPITAL": "HOSPITAL",
-        "ID": "UNIQUE",
-        "PATIENT": "PATIENT",
-        "PHONE": "PHONE",
-        "AGE": "AGE",
-    }
-
-    labeled_reports = []
-    assert len(reports) == len(predictions)
-
-    for i in range(len(reports)):
-        labeled_report = reports[i]
-        offset = 0
-
-        for prediction in predictions[i]:
-            assert (
-                labeled_report[
-                    prediction["start"] + offset : prediction["end"] + offset
-                ]
-                == prediction["word"]
-            )
-            labeled_report = (
-                labeled_report[: prediction["start"] + offset]
-                + "\\"
-                + model_labels_to_hips_labels[prediction["entity"]]
-                + "[["
-                + labeled_report[
-                    prediction["start"] + offset : prediction["end"] + offset
-                ]
-                + "]]"
-                + labeled_report[prediction["end"] + offset :]
-            )
-
-            offset += 1 + len(model_labels_to_hips_labels[prediction["entity"]]) + 2 + 2
-
-        labeled_reports.append(labeled_report)
-
-    labeled_reports_reconstituated = []
+    predictions_reconstituated = {}
 
     for i in range(len(reports_save)):
-        labeled_reports_reconstituated.append(
-            labeled_reports[i]
-            + "".join(
-                [labeled_reports[j] for j in report_idx_to_leftover_chunks_idx[i]]
-            )
-        )
+        predictions_reconstituated[i] = [p for p in predictions[i]]
+        for j in report_idx_to_leftover_chunks_idx[i]:
+            
+            predictions_reconstituated[i].extend(p for p in predictions[j])
 
-    assert len(labeled_reports_reconstituated) == len(reports_save)
+    assert len(predictions_reconstituated) == len(reports_save)
 
-    with open("labeled_reports" + file_seed + ".npy", "wb") as f:
+
+    with open("predictions" + file_seed + ".npy", "wb") as f:
         np.save(
             f,
-            np.array(labeled_reports_reconstituated).astype("object"),
+            np.array(predictions_reconstituated).astype("object"),
             allow_pickle=True,
         )
 
     with open("original_reports" + file_seed + ".npy", "wb") as f:
         np.save(f, np.array(reports_save).astype("object"), allow_pickle=True)
 
-    len(reports_save) == len(labeled_reports_reconstituated)
+    len(reports_save) == len(predictions_reconstituated)
 
     return
