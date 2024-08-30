@@ -98,10 +98,10 @@ def generate_output_files(file_seed_list, output_file_path):
 
     csvlist_filename = "datalist.csv"
     with open(csvlist_filename, mode='w', newline='') as csvlist_fileobject:
-        writer = csv.writer(csvlist_filename)
+        writer = csv.writer(csvlist_fileobject)
         for file_seed in file_seed_list:
             
-            writer.writerow("original_reports" + file_seed + ".npy", "predictions" + file_seed + ".npy")
+            writer.writerow(["original_reports" + file_seed + ".npy", "predictions" + file_seed + ".npy"])
     
 
 def main(args):
@@ -110,7 +110,6 @@ def main(args):
 
     with open(args.input_file_path, "rb") as f:
         reports = np.load(f, allow_pickle=True)
-
     print("Processing", str(len(reports)), "reports")
 
     device_list = (
