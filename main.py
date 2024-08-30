@@ -8,6 +8,7 @@ import time
 import random
 import os
 import pandas as pd
+import csv
 
 
 def parse_args():
@@ -89,36 +90,19 @@ def deidentifier_model_and_hide_in_plain_sight(
     deidentifier_model(
         file_seed, device, num_workers, batch_size, hospital_list, vendor_list
     )
-    # hide_in_plain_sight(file_seed)
 
 
 def generate_output_files(file_seed_list, output_file_path):
     original_reports = []
     predictions = {}
 
-    for file_seed in file_seed_list:
-        with open("original_reports" + file_seed + ".npy", "rb") as f:
-            original_reports.append(np.load(f, allow_pickle=True))
-        os.remove("original_reports" + file_seed + ".npy")
-
-        with open("predictions" + file_seed + ".npy", "rb") as f:
-            prediction_seed = np.load(f, allow_pickle=True).item()
-            for p in prediction_seed:
-                if p in predictions:
-                    predictions[p].extend(prediction_seed[p])
-                else:
-                    predictions[p] = prediction_seed[p]
-        os.remove("predictions" + file_seed + ".npy")
-
-
-    original_reports = np.concatenate(original_reports)
-    # predictions = np.concatenate(predictions)
-
-    with open("original_reports.npy", "wb") as f:
-        np.save(f, original_reports, allow_pickle=True)
-
-    with open("predictions.npy", "wb") as f:
-        np.save(f, predictions, allow_pickle=True)
+    csvlist_filename = "datalist.csv"
+    with open(csvlist_filename, mode='w', newline='') as csvlist_fileobject:
+        writer = csv.writer(csvlist_filename)
+        for file_seed in file_seed_list:
+            
+            writer.writerow("original_reports" + file_seed + ".npy", "predictions" + file_seed + ".npy")
+    
 
 def main(args):
     # Load the reports
