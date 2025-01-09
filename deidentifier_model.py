@@ -60,9 +60,9 @@ def deidentifier_model(file_seed, device, num_workers, batch_size, hospitals, ve
     for i in range(len(reports)):
         report = reports[i]
         report = report.replace("\\", "  ")
-    #     report = report.replace("[", "")
-    #     report = report.replace("]", "")
-        report = report.strip()
+        # report = report.replace("[", "")
+        # report = report.replace("]", "")
+        # report = report.strip()
 
         # for label in labels:
         #    report = report.replace(label, "")
@@ -883,69 +883,40 @@ def deidentifier_model(file_seed, device, num_workers, batch_size, hospitals, ve
         if len(prediction):
             assert prediction[-1]["start"] < prediction[-1]["end"]
 
-    model_labels_to_hips_labels = {
-        "VENDOR": "VENDOR",
-        "DATE": "DATES",
-        "HCW": "HCW",
-        "HOSPITAL": "HOSPITAL",
-        "ID": "UNIQUE",
-        "PATIENT": "PATIENT",
-        "PHONE": "PHONE",
-        "AGE": "AGE",
-    }
+    report_chunk_size = []
+    for report in reports:
+        report_chunk_size.append(len(report))
+    predictions_reconstituated = {}
 
-    labeled_reports = []
-    assert len(reports) == len(predictions)
-
-    for i in range(len(reports)):
-        labeled_report = reports[i]
+    offset = 0
+    for i in range(len(reports_save)):
+        predictions_reconstituated[i] = [p for p in predictions[i]]
+        offset += report_chunk_size[i]
+        for j in report_idx_to_leftover_chunks_idx[i]:
+            p_list = []
+            for p in predictions[j]:
+                p["start"] += offset
+                p["end"] += offset
+                p_list.append(p)
+            predictions_reconstituated[i].extend(p_list)
+            offset += report_chunk_size[j]
         offset = 0
 
-        for prediction in predictions[i]:
-            assert (
-                labeled_report[
-                    prediction["start"] + offset : prediction["end"] + offset
-                ]
-                == prediction["word"]
-            )
-            labeled_report = (
-                labeled_report[: prediction["start"] + offset]
-                + "\\"
-                + model_labels_to_hips_labels[prediction["entity"]]
-                + "[["
-                + labeled_report[
-                    prediction["start"] + offset : prediction["end"] + offset
-                ]
-                + "]]"
-                + labeled_report[prediction["end"] + offset :]
-            )
+                
 
-            offset += 1 + len(model_labels_to_hips_labels[prediction["entity"]]) + 2 + 2
+    assert len(predictions_reconstituated) == len(reports_save)
 
-        labeled_reports.append(labeled_report)
 
-    labeled_reports_reconstituated = []
-
-    for i in range(len(reports_save)):
-        labeled_reports_reconstituated.append(
-            labeled_reports[i]
-            + "".join(
-                [labeled_reports[j] for j in report_idx_to_leftover_chunks_idx[i]]
-            )
-        )
-
-    assert len(labeled_reports_reconstituated) == len(reports_save)
-
-    with open("labeled_reports" + file_seed + ".npy", "wb") as f:
+    with open("predictions" + file_seed + ".npy", "wb") as f:
         np.save(
             f,
-            np.array(labeled_reports_reconstituated).astype("object"),
+            np.array(predictions_reconstituated).astype("object"),
             allow_pickle=True,
         )
 
     with open("original_reports" + file_seed + ".npy", "wb") as f:
         np.save(f, np.array(reports_save).astype("object"), allow_pickle=True)
 
-    len(reports_save) == len(labeled_reports_reconstituated)
+    len(reports_save) == len(predictions_reconstituated)
 
     return
